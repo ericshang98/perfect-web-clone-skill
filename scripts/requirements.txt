@@ -1,0 +1,10 @@
+# Perfect Web Clone - Python Dependencies
+
+# Core: Browser automation
+playwright>=1.40.0
+
+# Optional: HTML parsing (for advanced extraction)
+beautifulsoup4>=4.12.0
+
+# Optional: Better async support
+aiohttp>=3.9.0
