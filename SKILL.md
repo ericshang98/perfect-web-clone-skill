@@ -1,5 +1,5 @@
 ---
-name: perfect-web-clone
+name: imperfect-web-clone
 description: Clone any webpage into pixel-perfect, production-ready code. Extracts complete page structure using Playwright, intelligently chunks content following three core principles (mutual exclusivity, complete coverage, size control), and generates React/Next.js/Vue/SvelteKit/HTML components in parallel using subagents. Use when user wants to clone a website, replicate a page design, convert URL to code, rebuild a webpage, or copy a website's layout.
 ---
 
@@ -56,9 +56,11 @@ python scripts/sanitize.py page_data.json --output page_data.json
 
 This strips:
 - HTML comments (which can hide injected instructions)
-- `<script>` and `<style>` tag contents
-- Content inside `display:none` / `visibility:hidden` elements
+- `<script>` tag contents (the DOM extractor already captures rendered results)
+- Prompt-injection phrases inside CSS `content:` property values
 - Suspiciously long or instruction-like `alt` / `title` attributes
+
+**Preserved for visual fidelity**: `<style>` tags (fonts, colors, layouts, variables, media queries) and hidden elements (`display:none` etc., needed for responsive layouts) are kept intact.
 
 ### Phase 3: Intelligent Chunking
 
