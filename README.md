@@ -13,7 +13,7 @@ English | [中文](README_CN.md)
 
 ---
 
-A Claude Code Skill that clones any webpage into pixel-perfect, production-ready React/Next.js/Vue code.
+A Claude Code Skill that clones any webpage into pixel-perfect, production-ready React/Next.js/Vue/SvelteKit/HTML code.
 
 > Created by [Nexting.ai](https://nexting.ai)
 
@@ -30,7 +30,7 @@ Clone https://stripe.com
 And it will automatically:
 1. Extract the page using Playwright
 2. Split it into manageable chunks
-3. Generate React/Next.js/Vue components in parallel
+3. Generate components in parallel (React/Next.js/Vue/SvelteKit/HTML)
 4. Assemble a complete runnable project
 
 **You don't need to run any scripts manually** - Claude Code handles everything.
@@ -73,6 +73,8 @@ Just tell Claude Code what you want in natural language:
 | `Clone https://stripe.com` | Clone with Next.js (default) |
 | `Clone https://linear.app using React` | Clone with React |
 | `Clone https://example.com with Vue` | Clone with Vue 3 |
+| `Clone https://example.com with SvelteKit` | Clone with SvelteKit |
+| `Clone https://example.com as static HTML` | Clone as vanilla HTML/CSS/JS |
 | `Clone https://example.com with 5 parallel agents` | Faster with more agents |
 | `Clone https://example.com as fast as possible` | Maximum parallelism |
 
@@ -127,7 +129,8 @@ For technical details, see [How It Works](#how-it-works-technical-details).
 | Next.js (default) | Tailwind CSS | `Clone https://...` |
 | React | Tailwind CSS | `Clone https://... using React` |
 | Vue 3 | Tailwind CSS | `Clone https://... with Vue` |
-| HTML | Vanilla CSS | `Clone https://... as static HTML` |
+| SvelteKit | Tailwind CSS (`@tailwindcss/vite`) | `Clone https://... with SvelteKit` |
+| Vanilla HTML | Tailwind CDN or hand-written CSS | `Clone https://... as static HTML` |
 
 ---
 
@@ -190,18 +193,39 @@ The page is split following **Three Principles**:
 
 Multiple Claude agents work simultaneously:
 - Each agent receives one section
-- Generates a self-contained React/Vue component
+- Generates a self-contained component (React/Vue/Svelte/HTML)
 - Uses Tailwind CSS for styling
 
 ### Phase 4: Project Assembly
 
-All components are combined into:
+All components are combined into a framework-specific project structure:
+
+**Next.js / React:**
 ```
 project/
 ├── src/components/   # Generated components
-├── src/app/page.tsx  # Main page
+├── src/app/page.tsx  # Main page (Next.js) or src/App.tsx (React)
 ├── tailwind.config.js
 └── package.json
+```
+
+**SvelteKit:**
+```
+project/
+├── src/lib/components/   # Generated components
+├── src/routes/+page.svelte  # Main page
+├── src/app.css
+├── svelte.config.js
+└── package.json
+```
+
+**Vanilla HTML:**
+```
+project/
+├── index.html        # Main page with all sections
+├── css/styles.css    # Styles (if not using Tailwind CDN)
+├── js/main.js        # Interactivity
+└── sections/         # Individual section fragments
 ```
 
 For more details:
