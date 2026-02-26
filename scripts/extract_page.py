@@ -20,8 +20,10 @@ Example:
 import asyncio
 import argparse
 import base64
+import ipaddress
 import json
 import logging
+import re as _re
 import sys
 from datetime import datetime
 from typing import Dict, Any, List, Optional
@@ -30,6 +32,97 @@ from urllib.parse import urljoin, urlparse
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+# --- Security: URL Validation (fixes C2 command injection + C3 SSRF) ---
+
+# Characters that trigger shell interpretation when a URL is passed via bash.
+# Note: '&' is intentionally excluded because it appears legitimately in URL
+# query strings (e.g. ?a=1&b=2).  The SKILL.md now uses single-quoted URLs
+# ('$URL') which prevent shell interpretation of & regardless.
+# '"' and "'" are included because they are invalid in URLs per RFC 3986 and
+# their only purpose would be to break out of shell quoting.
+_SHELL_DANGEROUS_CHARS = set('$`;|(){}"\'\n\r')
+
+_ALLOWED_SCHEMES = {'http', 'https'}
+
+_BLOCKED_HOSTS = {
+    'localhost',
+    '127.0.0.1',
+    '0.0.0.0',
+    '::1',
+    '169.254.169.254',           # AWS / Azure metadata
+    'metadata.google.internal',  # GCP metadata
+    'metadata.internal',
+}
+
+
+def validate_url(url: str) -> str:
+    """
+    Validate a URL for safety before passing it to Playwright or a shell command.
+
+    Blocks:
+      - Shell metacharacters that enable command injection (C2)
+      - file://, ftp://, javascript:, data:, and other non-HTTP schemes (C3)
+      - Private / loopback / link-local IP addresses (C3)
+      - Known cloud-provider metadata endpoints (C3)
+
+    Returns the URL unchanged if it passes all checks.
+    Raises ValueError with a descriptive message on any violation.
+    """
+    if not url or not url.strip():
+        raise ValueError("URL must not be empty")
+
+    # C2: Reject shell metacharacters
+    dangerous_found = _SHELL_DANGEROUS_CHARS.intersection(url)
+    if dangerous_found:
+        raise ValueError(
+            f"URL contains dangerous shell characters: {dangerous_found!r}"
+        )
+
+    parsed = urlparse(url)
+
+    # Must have a scheme
+    if not parsed.scheme:
+        raise ValueError(f"URL has no scheme (expected http:// or https://): {url}")
+
+    # C3: Only allow http and https
+    if parsed.scheme.lower() not in _ALLOWED_SCHEMES:
+        raise ValueError(f"Blocked URL scheme '{parsed.scheme}' (only http/https allowed)")
+
+    # Must have a hostname
+    hostname = parsed.hostname
+    if not hostname:
+        raise ValueError(f"URL has no hostname: {url}")
+
+    # C3: Block known dangerous hostnames
+    if hostname.lower() in _BLOCKED_HOSTS:
+        raise ValueError(f"Blocked hostname: {hostname}")
+
+    # C3: Block private / reserved / loopback IP addresses
+    try:
+        ip = ipaddress.ip_address(hostname)
+        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved:
+            raise ValueError(f"Blocked internal/reserved IP address: {hostname}")
+    except ValueError as exc:
+        # If ipaddress can't parse it, it's a regular hostname — that's fine.
+        # Re-raise only if it's our own "Blocked" message.
+        if str(exc).startswith("Blocked"):
+            raise
+
+    # C3: Block IPv6-mapped IPv4 private addresses (e.g. ::ffff:127.0.0.1)
+    if hostname.startswith('[') or '::ffff:' in hostname.lower():
+        # Strip brackets for parsing
+        raw = hostname.strip('[]')
+        try:
+            ip = ipaddress.ip_address(raw)
+            mapped = getattr(ip, 'ipv4_mapped', None)
+            if mapped and (mapped.is_private or mapped.is_loopback or mapped.is_link_local):
+                raise ValueError(f"Blocked IPv6-mapped private address: {hostname}")
+        except ValueError as exc:
+            if str(exc).startswith("Blocked"):
+                raise
+
+    return url
 
 
 class PageExtractor:
@@ -95,6 +188,8 @@ class PageExtractor:
         )
 
         try:
+            # Security: validate URL before navigation
+            url = validate_url(url)
             logger.info(f"Loading page: {url}")
             await page.goto(url, wait_until='load', timeout=60000)
             await asyncio.sleep(wait_time / 1000)
@@ -548,6 +643,13 @@ async def main():
     except:
         width, height = 1920, 1080
         logger.warning(f"Invalid viewport format, using default {width}x{height}")
+
+    # Security: validate URL before doing anything else
+    try:
+        validate_url(args.url)
+    except ValueError as e:
+        logger.error(f"Invalid URL: {e}")
+        sys.exit(1)
 
     logger.info(f"Starting extraction: {args.url}")
     logger.info(f"Viewport: {width}x{height}, Wait: {args.wait}ms")

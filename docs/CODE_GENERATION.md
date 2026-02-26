@@ -7,7 +7,7 @@ This document describes how subagents should generate code for each section.
 Each subagent receives ONE section and must:
 1. Analyze the HTML structure
 2. Extract the design system (colors, typography, spacing)
-3. Generate a self-contained React/Next.js component
+3. Generate a self-contained component in the target framework
 4. Use Tailwind CSS for styling
 5. Preserve original image URLs
 
@@ -88,9 +88,64 @@ export default function Section3({ className = '' }: Section3Props) {
 </script>
 ```
 
+### SvelteKit
+
+```svelte
+<!-- src/lib/components/Section3.svelte -->
+
+<script lang="ts">
+  let { class: className = '' }: { class?: string } = $props()
+
+  // Use Svelte 5 runes for reactive state
+  // let count = $state(0)
+  // let doubled = $derived(count * 2)
+</script>
+
+<section class="py-24 bg-gray-50 {className}">
+  <div class="container mx-auto px-4">
+    <!-- Content here -->
+  </div>
+</section>
+
+<style>
+  /* Component-scoped styles (only when Tailwind can't express the value) */
+</style>
+```
+
+**SvelteKit conventions:**
+- Use `$props()` rune for component props (Svelte 5 syntax)
+- Use `$state()` for reactive variables, `$derived()` for computed values
+- Use `class` not `className` — this is standard HTML/Svelte
+- Component-scoped `<style>` block is automatically scoped by Svelte
+- Use standard `<img>` tags (no special image component)
+- Place components in `src/lib/components/` (SvelteKit `$lib` alias)
+
+### Vanilla HTML
+
+```html
+<!-- Section 3: Features -->
+
+<section id="section-3" class="features">
+  <div class="container">
+    <!-- Content here -->
+  </div>
+</section>
+```
+
+**Vanilla HTML conventions:**
+- No component system, no imports/exports — each section is an HTML fragment
+- Use `<section>` with a unique `id` attribute for each section
+- Two styling approaches (choose based on user preference):
+  - **Tailwind CDN** (default): Use Tailwind utility classes directly in HTML
+  - **Hand-written CSS**: Use semantic class names, define styles in `css/styles.css`
+- Use vanilla JavaScript for interactivity (e.g., mobile menu toggle, scroll events)
+- No TypeScript, no build tools, no bundler — plain files served directly
+
 ## Styling Strategy
 
 ### Priority Order
+
+> **Note on `class` vs `className`**: React/Next.js use `className`. Vue, SvelteKit, and Vanilla HTML use the standard `class` attribute. Always match the target framework's syntax.
 
 1. **Tailwind Utility Classes** (preferred)
    ```tsx
@@ -174,6 +229,30 @@ module.exports = {
 }
 ```
 
+### SvelteKit Images
+
+SvelteKit uses standard `<img>` tags. No special component or domain configuration needed:
+
+```svelte
+<img
+  src="https://example.com/hero-image.jpg"
+  alt="Hero"
+  class="w-full h-auto"
+/>
+```
+
+### Vanilla HTML Images
+
+Use standard `<img>` tags with no framework overhead:
+
+```html
+<img
+  src="https://example.com/hero-image.jpg"
+  alt="Hero"
+  class="w-full h-auto"
+/>
+```
+
 ## Layout Patterns
 
 ### Hero Section
@@ -193,6 +272,8 @@ module.exports = {
   </div>
 </section>
 ```
+
+**Framework adaptation**: The layout patterns above use JSX syntax (`className`, `{}`). For Vue/SvelteKit, replace `className` with `class`. For Vanilla HTML, remove `{}` expressions and use static content directly.
 
 ### Feature Grid
 ```tsx
@@ -316,11 +397,17 @@ module.exports = {
 
 Each subagent MUST:
 
-1. **Create ONE file**: `src/components/SectionN.tsx`
-2. **Export default**: The component must be the default export
-3. **Accept className prop**: For parent customization
+1. **Create ONE file** in the framework-specific location:
+   | Framework | Output Path | Extension |
+   |-----------|------------|-----------|
+   | Next.js / React | `src/components/SectionN.tsx` | `.tsx` |
+   | Vue 3 | `src/components/SectionN.vue` | `.vue` |
+   | SvelteKit | `src/lib/components/SectionN.svelte` | `.svelte` |
+   | Vanilla HTML | `sections/sectionN.html` | `.html` |
+2. **Export default**: The component must be the default export (not applicable for Vanilla HTML)
+3. **Accept className/class prop**: For parent customization (not applicable for Vanilla HTML)
 4. **Be self-contained**: No external state dependencies
-5. **Use TypeScript**: With proper interface definitions
+5. **Use TypeScript**: With proper interface definitions (React/Next.js: `.tsx`, Vue: `lang="ts"`, SvelteKit: `lang="ts"`, Vanilla HTML: not applicable)
 6. **Include comments**: For complex logic only
 
 ## Quality Checklist
@@ -335,3 +422,7 @@ Before completing, verify:
 - [ ] Typography (font sizes, weights) matches
 - [ ] Spacing (padding, margins, gaps) matches
 - [ ] No hardcoded widths that break responsiveness
+- [ ] Framework-correct attribute syntax (`className` for React/Next.js, `class` for Vue/SvelteKit/HTML)
+- [ ] Correct file extension for target framework (`.tsx`, `.vue`, `.svelte`, `.html`)
+- [ ] SvelteKit uses Svelte 5 runes (`$state`, `$derived`, `$props()`) — not legacy `export let` or stores
+- [ ] Vanilla HTML sections are valid HTML fragments with unique `id` attributes

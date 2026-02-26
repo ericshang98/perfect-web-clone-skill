@@ -13,7 +13,7 @@
 
 ---
 
-一个 Claude Code Skill，能够将任意网页克隆为像素级还原的 React/Next.js/Vue 代码。
+一个 Claude Code Skill，能够将任意网页克隆为像素级还原的 React/Next.js/Vue/SvelteKit/HTML 代码。
 
 > 由 [Nexting.ai](https://nexting.ai) 创建
 
@@ -30,7 +30,7 @@
 它会自动：
 1. 使用 Playwright 提取页面
 2. 将页面切分为可管理的区块
-3. 并行生成 React/Next.js/Vue 组件
+3. 并行生成组件（React/Next.js/Vue/SvelteKit/HTML）
 4. 组装成完整可运行的项目
 
 **你不需要手动运行任何脚本** —— Claude Code 会处理一切。
@@ -73,6 +73,8 @@ git clone https://github.com/anthropics/perfect-web-clone-skill.git .claude/skil
 | `克隆 https://stripe.com` | 用 Next.js 克隆（默认） |
 | `用 React 克隆 https://linear.app` | 用 React 克隆 |
 | `Clone https://example.com with Vue` | 用 Vue 3 克隆 |
+| `用 SvelteKit 克隆 https://example.com` | 用 SvelteKit 克隆 |
+| `克隆 https://example.com 为静态 HTML` | 克隆为原生 HTML/CSS/JS |
 | `用 5 个并行 agent 克隆 https://example.com` | 更多 agent 更快 |
 | `最快速度克隆 https://example.com` | 最大并行度 |
 
@@ -127,7 +129,8 @@ npm install && npm run dev
 | Next.js（默认） | Tailwind CSS | `克隆 https://...` |
 | React | Tailwind CSS | `用 React 克隆 https://...` |
 | Vue 3 | Tailwind CSS | `用 Vue 克隆 https://...` |
-| HTML | 原生 CSS | `克隆 https://... 为静态 HTML` |
+| SvelteKit | Tailwind CSS（`@tailwindcss/vite`） | `用 SvelteKit 克隆 https://...` |
+| 原生 HTML | Tailwind CDN 或手写 CSS | `克隆 https://... 为静态 HTML` |
 
 ---
 
@@ -190,18 +193,39 @@ Skill 使用 Playwright 抓取：
 
 多个 Claude Agent 同时工作：
 - 每个 Agent 处理一个区块
-- 生成独立的 React/Vue 组件
+- 生成独立的组件（React/Vue/Svelte/HTML）
 - 使用 Tailwind CSS 样式
 
 ### Phase 4: 项目组装
 
-所有组件整合为：
+所有组件按目标框架整合为不同项目结构：
+
+**Next.js / React:**
 ```
 project/
 ├── src/components/   # 生成的组件
-├── src/app/page.tsx  # 主页面
+├── src/app/page.tsx  # 主页面（Next.js）或 src/App.tsx（React）
 ├── tailwind.config.js
 └── package.json
+```
+
+**SvelteKit:**
+```
+project/
+├── src/lib/components/   # 生成的组件
+├── src/routes/+page.svelte  # 主页面
+├── src/app.css
+├── svelte.config.js
+└── package.json
+```
+
+**原生 HTML:**
+```
+project/
+├── index.html        # 主页面（包含所有区块）
+├── css/styles.css    # 样式（不使用 Tailwind CDN 时）
+├── js/main.js        # 交互逻辑
+└── sections/         # 各区块 HTML 片段
 ```
 
 更多细节：
