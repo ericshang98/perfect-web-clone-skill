@@ -19,7 +19,7 @@ pip install "git+https://github.com/ericshang98/Perfect-Web-Clone.git"
 playwright install chromium
 ```
 
-The current agent is the harness runtime. `pwc` is the deterministic hands and
+The current coding agent is the runtime. `pwc` is the deterministic hands and
 eyes. It never calls a model. You understand the evidence, author code, and
 repair the worst section.
 

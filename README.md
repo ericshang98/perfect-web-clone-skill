@@ -1,9 +1,9 @@
 # Perfect Web Clone Skill
 
-A skill for cloning a live webpage into a measured Vite + React project.
+Clone any webpage into a **pixel-perfect**, measured Vite + React project.
 
-This repository is the **playbook**. The measured core (extract / plan / gates)
-lives in [Perfect-Web-Clone](https://github.com/ericshang98/Perfect-Web-Clone).
+This repository is the **playbook**. Capture, sectioning, and scoring live in
+[Perfect-Web-Clone](https://github.com/ericshang98/Perfect-Web-Clone).
 
 English | [中文](README_CN.md)
 
@@ -23,20 +23,15 @@ cp SKILL.md ~/.claude/skills/perfect-web-clone/
 
 Or clone this repo into `~/.claude/skills/perfect-web-clone`.
 
-### DeepSeek Harness
-
-```bash
-npx @deepseek-ai/dsh web
-dsh plugin --profile web add github:ericshang98/Perfect-Web-Clone
-```
-
 Then: `clone https://example.com`
 
-## What this is not
+The same `pwc` CLI works from Codex or any coding agent that can run shell commands.
 
-This is not the January 2026 two-script extractor. Pixel-perfect is a gate
-table (fingerprints, weight, per-section SSIM), not a prompt. The old
-`scripts/extract_page.py` path is retired.
+## What this is
+
+Pixel-perfect is a gate table (fingerprints, weight, per-section visual score),
+not a prompt. The agent writes clean React; the core measures the replica
+against the original and repairs the worst section.
 
 ## License
 
